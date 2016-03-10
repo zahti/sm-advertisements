@@ -1,0 +1,35 @@
+sudo: false
+language: c
+
+addons:
+    apt_packages:
+        - lib32stdc++6
+
+env:
+    - SOURCEMOD=1.7
+    - SOURCEMOD=1.8
+
+before_script:
+    - mkdir build && cd build
+    - wget "http://www.sourcemod.net/latest.php?version=$SOURCEMOD&os=linux" -O sourcemod-$SOURCEMOD-linux.tar.gz
+    - tar -xzf sourcemod-$SOURCEMOD-linux.tar.gz
+    - cd addons/sourcemod/scripting
+    - chmod +x spcomp
+    - cp -R $TRAVIS_BUILD_DIR/addons/sourcemod/scripting/* .
+
+script: ./compile.sh advertisements.sp
+
+before_deploy:
+    - cp -R compiled/* $TRAVIS_BUILD_DIR/addons/sourcemod/plugins/
+    - cd $TRAVIS_BUILD_DIR
+    - tar -czf release.tar.gz addons/
+
+deploy:
+    provider: releases
+    api_key:
+        secure: o0ZnxHb4OjAz7GwQgYfcl+YopRo/a7fWy8/+Vt4V05bWiuoqG1Roc6dAMVzkNBRz4iCihjkQmwq5AVSxOrdqFa9xQAAFfydYAO2nreaD2k+Djj5W0JTzy/tO8ZFh1MSlJke6qerYJ2MoO7dlvSAWvEq1RhRiHQ2f8Gh+YTZNrnqNz9hV4jGywulYCTiqZRVx3NFnQLM65r7dZtyoQ9rE0qfy2c/vUDhuL4VxsOM14DmFxnfk7ekfqOI/J8dxWtLU9MlaBW0JiW6SVMUIDplQR0RHlQkrnml5XwQwHkW2eipOQwxOpP2NZUYkj4hfkmETs4W9O13igwbJM4CjlfWUaaRCeI9Ka6iiO6L9KGqzp+MVxCKajjNF1Krb/JklBoCHNbYBdZsVP97YeFjB+tT9duwN+CVamtGjCSspGxQMClranRCpphWbszzsvzdJcCEPowI/M16w+E7ejOO0KbaajEzmkpA8tjdj4NfoLrve5VtJtR9Nto9UBWFz7nrjx8/UXUR2gBkhwzxF6MBvpxC8nCGMzJHxLqUu3UP5SdpqhlR5e8SQkI7bDaZP7bY1LzLIGlSa8spwP+UuCqsHT5t1jfyXQIrT1ZuiH+3n7DWutUDu5nkAIKnk9COT2ao3aBYh9uMSD4Qr6lxO8TXfLuc8TytQdIzl+b3BDYb/B+4pqN0=
+    file: release.tar.gz
+    skip_cleanup: true
+    on:
+        tags: true
+        condition: $SOURCEMOD = 1.7
