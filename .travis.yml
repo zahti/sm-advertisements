@@ -23,6 +23,14 @@ before_deploy:
     - cp -R compiled/* $TRAVIS_BUILD_DIR/addons/sourcemod/plugins/
     - cd $TRAVIS_BUILD_DIR
     - tar -czf release.tar.gz addons/
+    - sed -e "s/\$TRAVIS_TAG/$TRAVIS_TAG/" update.txt.template > update.txt
+    - git config user.name "Travis CI"
+    - git config user.email "travis@example.com"
+    - git checkout --orphan gh-pages
+    - git rm -rf .
+    - git add addons/ update.txt
+    - git commit -m "Deploy to GitHub Pages"
+    - git push --force --quiet origin gh-pages > /dev/null 2>&1
 
 deploy:
     provider: releases

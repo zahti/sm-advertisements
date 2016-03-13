@@ -1,11 +1,14 @@
 #include <sourcemod>
 #include <colorvariables>
+#undef REQUIRE_PLUGIN
+#include <updater>
 #include "advertisements/topcolors.sp"
 
 #pragma newdecls required
 #pragma semicolon 1
 
-#define PL_VERSION	"2.0.0"
+#define PL_VERSION	"2.0.1"
+#define UPDATE_URL	"http://ErikMinekus.github.io/sm-advertisements/update.txt"
 
 public Plugin myinfo =
 {
@@ -45,6 +48,10 @@ public void OnPluginStart()
     AddTopColors();
 
     g_bSayText2 = (GetUserMessageId("SayText2") != INVALID_MESSAGE_ID);
+
+    if (LibraryExists("updater")) {
+        Updater_AddPlugin(UPDATE_URL);
+    }
 }
 
 public void OnMapStart()
@@ -52,6 +59,13 @@ public void OnMapStart()
     ParseAds();
 
     g_hTimer = CreateTimer(g_hInterval.IntValue * 1.0, Timer_DisplayAd, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+}
+
+public void OnLibraryAdded(const char[] name)
+{
+    if (StrEqual(name, "updater")) {
+        Updater_AddPlugin(UPDATE_URL);
+    }
 }
 
 public void ConVarChange_Interval(ConVar convar, const char[] oldValue, const char[] newValue)
