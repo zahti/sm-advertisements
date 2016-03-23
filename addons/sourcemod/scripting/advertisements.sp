@@ -7,7 +7,7 @@
 #pragma newdecls required
 #pragma semicolon 1
 
-#define PL_VERSION	"2.0.1"
+#define PL_VERSION	"2.0.2"
 #define UPDATE_URL	"http://ErikMinekus.github.io/sm-advertisements/update.txt"
 
 public Plugin myinfo =
@@ -23,7 +23,6 @@ public Plugin myinfo =
 /**
  * Globals
  */
-bool g_bSayText2;
 KeyValues g_hAdvertisements;
 ConVar g_hEnabled;
 ConVar g_hFile;
@@ -41,13 +40,12 @@ public void OnPluginStart()
     g_hFile     = CreateConVar("sm_advertisements_file",     "advertisements.txt", "File to read the advertisements from.");
     g_hInterval = CreateConVar("sm_advertisements_interval", "30",                 "Amount of seconds between advertisements.");
 
+    g_hFile.AddChangeHook(ConVarChange_File);
     g_hInterval.AddChangeHook(ConVarChange_Interval);
 
     RegServerCmd("sm_advertisements_reload", Command_ReloadAds, "Reload the advertisements");
 
     AddTopColors();
-
-    g_bSayText2 = (GetUserMessageId("SayText2") != INVALID_MESSAGE_ID);
 
     if (LibraryExists("updater")) {
         Updater_AddPlugin(UPDATE_URL);
@@ -66,6 +64,11 @@ public void OnLibraryAdded(const char[] name)
     if (StrEqual(name, "updater")) {
         Updater_AddPlugin(UPDATE_URL);
     }
+}
+
+public void ConVarChange_File(ConVar convar, const char[] oldValue, const char[] newValue)
+{
+    ParseAds();
 }
 
 public void ConVarChange_Interval(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -162,14 +165,17 @@ public Action Timer_DisplayAd(Handle timer)
         delete hPl;
     }
     if (sChat[0]) {
+        bool bTeamColor = StrContains(sChat, "{teamcolor}", false) != -1;
+
         ProcessVariables(sChat);
         CProcessVariables(sChat, sizeof(sChat));
+        CAddWhiteSpace(sChat, sizeof(sChat));
 
         for (int i = 1; i <= MaxClients; i++) {
             if (IsClientInGame(i) && !IsFakeClient(i) &&
                 ((!bAdmins && !(bFlags && (GetUserFlagBits(i) & (iFlags|ADMFLAG_ROOT)))) ||
                  (bAdmins && (GetUserFlagBits(i) & (ADMFLAG_GENERIC|ADMFLAG_ROOT))))) {
-                if (g_bSayText2) {
+                if (bTeamColor) {
                     CSayText2(i, sChat, i);
                 } else {
                     PrintToChat(i, sChat);
