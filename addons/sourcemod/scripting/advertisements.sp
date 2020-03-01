@@ -7,7 +7,7 @@
 #pragma newdecls required
 #pragma semicolon 1
 
-#define PL_VERSION	"2.0.2"
+#define PL_VERSION	"2.0.3"
 #define UPDATE_URL	"http://ErikMinekus.github.io/sm-advertisements/update.txt"
 
 public Plugin myinfo =
@@ -167,6 +167,7 @@ public Action Timer_DisplayAd(Handle timer)
     if (sChat[0]) {
         bool bTeamColor = StrContains(sChat, "{teamcolor}", false) != -1;
 
+        Format(sChat, sizeof(sChat), "%c%s", 1, sChat);
         ProcessVariables(sChat);
         CProcessVariables(sChat, sizeof(sChat));
         CAddWhiteSpace(sChat, sizeof(sChat));
@@ -237,7 +238,7 @@ public Action Timer_CenterAd(Handle timer, DataPack pack)
 void ParseAds()
 {
     delete g_hAdvertisements;
-    g_hAdvertisements = CreateKeyValues("Advertisements");
+    g_hAdvertisements = new KeyValues("Advertisements");
 
     char sFile[64], sPath[PLATFORM_MAX_PATH];
     g_hFile.GetString(sFile, sizeof(sFile));
@@ -247,6 +248,7 @@ void ParseAds()
         SetFailState("File Not Found: %s", sPath);
     }
 
+    g_hAdvertisements.SetEscapeSequences(true);
     g_hAdvertisements.ImportFromFile(sPath);
     g_hAdvertisements.GotoFirstSubKey();
 }
@@ -254,11 +256,6 @@ void ParseAds()
 void ProcessVariables(char sText[1024])
 {
     char sBuffer[64];
-    if (StrContains(sText, "\\n") != -1) {
-        Format(sBuffer, sizeof(sBuffer), "%c", 13);
-        ReplaceString(sText, sizeof(sText), "\\n", sBuffer);
-    }
-
     if (StrContains(sText, "{currentmap}", false) != -1) {
         GetCurrentMap(sBuffer, sizeof(sBuffer));
         ReplaceString(sText, sizeof(sText), "{currentmap}", sBuffer, false);
