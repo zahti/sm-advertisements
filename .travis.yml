@@ -9,8 +9,8 @@ env:
     global:
         - secure: JUNQHC6mafptpSpQqsQJNqhqg4hLfgrBEZFXRmPePXKSqcaoC4NnH7Fx1vGDQANHIgAspNDAhmbs7HY4bP43zJ24c+XuObpDn3TZmIHM0/yKZ/04vDdZIR09dk1qXt4zlTakT2jfuSm1YbCU5UI5NDKJryksY9eiK1VC/X9Ji+Ha2CJyj+I00jTYNfuqmu9BIFyvl26sMocfj3GEv9YIH77u+YXiCW4UDGKkb54LwznfUvqNdAa11visEQr9uK1uB9iwIo8lcfM6qEOMAmk84PvP2uOcCtUG92ryV+w+pege90xtlX4wy94N5xbx7kiEkfLMZpVolVv2HAkL4cmnAjEpv8orJYt8sc88Y2dilfrOnQqYEtI0kJvNsrwdYudPmmMLSxcHw6nWfBJ23k159dn3qeHuJQ1mCB/2ahEkZJsgqVt+9lwbFT2UU8tOqYOoaG8oC2dkYa0ZuNgcqbXZmUKfENizmf7kI8SzhBryoYA61G2YZ0HmwN4XROIcXpiNxIDFcKyxC/xzMmTm69xLSrmUmP1uaJdgY405pe8CyJVniaExx54LM8j0t/l48xI5EjkX9IpEVjHoa2OI8S2ph/LXtYNOgH0vV/4F6dUWZcyPZs2CQCA5eS3Gi0t67POdhgx8f374/G0RxlmLa4PcQh3+9nEDMj9EKpH7GO4/By0=
     matrix:
-        - SOURCEMOD=1.7
-        - SOURCEMOD=1.8
+        - SOURCEMOD=1.10
+        - SOURCEMOD=1.11
 
 before_script:
     - mkdir build && cd build
@@ -39,9 +39,9 @@ before_deploy:
 deploy:
     provider: releases
     api_key:
-        secure: o0ZnxHb4OjAz7GwQgYfcl+YopRo/a7fWy8/+Vt4V05bWiuoqG1Roc6dAMVzkNBRz4iCihjkQmwq5AVSxOrdqFa9xQAAFfydYAO2nreaD2k+Djj5W0JTzy/tO8ZFh1MSlJke6qerYJ2MoO7dlvSAWvEq1RhRiHQ2f8Gh+YTZNrnqNz9hV4jGywulYCTiqZRVx3NFnQLM65r7dZtyoQ9rE0qfy2c/vUDhuL4VxsOM14DmFxnfk7ekfqOI/J8dxWtLU9MlaBW0JiW6SVMUIDplQR0RHlQkrnml5XwQwHkW2eipOQwxOpP2NZUYkj4hfkmETs4W9O13igwbJM4CjlfWUaaRCeI9Ka6iiO6L9KGqzp+MVxCKajjNF1Krb/JklBoCHNbYBdZsVP97YeFjB+tT9duwN+CVamtGjCSspGxQMClranRCpphWbszzsvzdJcCEPowI/M16w+E7ejOO0KbaajEzmkpA8tjdj4NfoLrve5VtJtR9Nto9UBWFz7nrjx8/UXUR2gBkhwzxF6MBvpxC8nCGMzJHxLqUu3UP5SdpqhlR5e8SQkI7bDaZP7bY1LzLIGlSa8spwP+UuCqsHT5t1jfyXQIrT1ZuiH+3n7DWutUDu5nkAIKnk9COT2ao3aBYh9uMSD4Qr6lxO8TXfLuc8TytQdIzl+b3BDYb/B+4pqN0=
+        secure: l298wqXu+PkzKVKLDL+OSS/Uie4wbtcW9bNmqo1G7c38Yr1gdJoztYM0N1yXZxWdsHGjZi1gQ6GnS8kEmp6duDp8Q7Ou8TWBYhzHM7Ye0XFsHhISBtBpSunVbqMxD1yJDuT9Rg0f8+TgiSXGY86E3x2F8lHoFXjFiVNv8dWd0cDDzXGE43bFhDtle0Rm9tXJfRe1E7yPIMe6epbUZpUL5Dp244b7xirjfxOhFseirwVy+cmCZVehOoUKuIpVuKoKijAJzP/v1g79y3ZtaRKVn+1bV0seqOBcwmWSy5QlmwomSpxNsbERJ0dc7TTTw5W5ldzCK2bHOTEFQyE4dJ1OSuw4J9Tx3i/Dfp4UDpPif0ME7i/wOmy5X6uwc3puou51AemTqDmnbI6ROvKzep3AofsDklrtqQxJ6fscsJpy92lD9Ql/eVOy+wphwYAR5T+YsDfNOk0EpFeolIwAs4iky/e1nL9aAp+DdjacGTRpJPfmZc/etXAvLhaJ1yy49NwPmm28YDQf2AARk2WpDDI+Kw2tdqKDcviRlGId5Tn0jEB13xtDqEplTuye078L+Rqumcq7a4744x1oudZ+62sEJ1pc2Z2i3v6Fr160oWl/FJ0jOxt302Kk8v5or94nFr3/xka+Tq51knXL85A3DLZ/P385fIk28t47/1mp7wFPysI=
     file: release.tar.gz
     skip_cleanup: true
     on:
         tags: true
-        condition: $SOURCEMOD = 1.7
+        condition: $SOURCEMOD = 1.10
