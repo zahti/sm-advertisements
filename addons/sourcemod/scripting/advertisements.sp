@@ -7,7 +7,7 @@
 #pragma newdecls required
 #pragma semicolon 1
 
-#define PL_VERSION	"2.0.3"
+#define PL_VERSION	"2.0.4"
 #define UPDATE_URL	"http://ErikMinekus.github.io/sm-advertisements/update.txt"
 
 public Plugin myinfo =
@@ -53,11 +53,10 @@ public void OnPluginStart()
     }
 }
 
-public void OnMapStart()
+public void OnConfigsExecuted()
 {
     ParseAds();
-
-    g_hTimer = CreateTimer(g_hInterval.IntValue * 1.0, Timer_DisplayAd, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+    RestartTimer();
 }
 
 public void OnLibraryAdded(const char[] name)
@@ -74,11 +73,7 @@ public void ConVarChange_File(ConVar convar, const char[] oldValue, const char[]
 
 public void ConVarChange_Interval(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-    if (g_hTimer) {
-        KillTimer(g_hTimer);
-    }
-
-    g_hTimer = CreateTimer(g_hInterval.IntValue * 1.0, Timer_DisplayAd, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+    RestartTimer();
 }
 
 
@@ -107,7 +102,7 @@ public Action Timer_DisplayAd(Handle timer)
         return;
     }
 
-    char sCenter[1024], sChat[1024], sHint[1024], sMenu[1024], sTop[1024], sFlags[16];
+    char sCenter[1024], sChat[1024], sHint[1024], sMenu[1024], sTop[1024], sFlags[22];
     g_hAdvertisements.GetString("center", sCenter, sizeof(sCenter));
     g_hAdvertisements.GetString("chat",   sChat,   sizeof(sChat));
     g_hAdvertisements.GetString("hint",   sHint,   sizeof(sHint));
@@ -122,9 +117,7 @@ public Action Timer_DisplayAd(Handle timer)
         ProcessVariables(sCenter);
 
         for (int i = 1; i <= MaxClients; i++) {
-            if (IsClientInGame(i) && !IsFakeClient(i) &&
-                ((!bAdmins && !(bFlags && (GetUserFlagBits(i) & (iFlags|ADMFLAG_ROOT)))) ||
-                 (bAdmins && (GetUserFlagBits(i) & (ADMFLAG_GENERIC|ADMFLAG_ROOT))))) {
+            if (IsValidClient(i, bAdmins, bFlags, iFlags)) {
                 PrintCenterText(i, sCenter);
 
                 DataPack hCenterAd;
@@ -138,9 +131,7 @@ public Action Timer_DisplayAd(Handle timer)
         ProcessVariables(sHint);
 
         for (int i = 1; i <= MaxClients; i++) {
-            if (IsClientInGame(i) && !IsFakeClient(i) &&
-                ((!bAdmins && !(bFlags && (GetUserFlagBits(i) & (iFlags|ADMFLAG_ROOT)))) ||
-                 (bAdmins && (GetUserFlagBits(i) & (ADMFLAG_GENERIC|ADMFLAG_ROOT))))) {
+            if (IsValidClient(i, bAdmins, bFlags, iFlags)) {
                 PrintHintText(i, sHint);
             }
         }
@@ -153,9 +144,7 @@ public Action Timer_DisplayAd(Handle timer)
         hPl.CurrentKey = 10;
 
         for (int i = 1; i <= MaxClients; i++) {
-            if (IsClientInGame(i) && !IsFakeClient(i) &&
-                ((!bAdmins && !(bFlags && (GetUserFlagBits(i) & (iFlags|ADMFLAG_ROOT)))) ||
-                 (bAdmins && (GetUserFlagBits(i) & (ADMFLAG_GENERIC|ADMFLAG_ROOT))))) {
+            if (IsValidClient(i, bAdmins, bFlags, iFlags)) {
                 hPl.Send(i, Handler_DoNothing, 10);
             }
         }
@@ -170,9 +159,7 @@ public Action Timer_DisplayAd(Handle timer)
         ProcessVariables(sBuffer);
 
         for (int i = 1; i <= MaxClients; i++) {
-            if (IsClientInGame(i) && !IsFakeClient(i) &&
-                ((!bAdmins && !(bFlags && (GetUserFlagBits(i) & (iFlags|ADMFLAG_ROOT)))) ||
-                 (bAdmins && (GetUserFlagBits(i) & (ADMFLAG_GENERIC|ADMFLAG_ROOT))))) {
+            if (IsValidClient(i, bAdmins, bFlags, iFlags)) {
                 if (bTeamColor) {
                     SayText2(i, sBuffer);
                 } else {
@@ -194,9 +181,7 @@ public Action Timer_DisplayAd(Handle timer)
         hKv.SetNum("time",     10);
 
         for (int i = 1; i <= MaxClients; i++) {
-            if (IsClientInGame(i) && !IsFakeClient(i) &&
-                ((!bAdmins && !(bFlags && (GetUserFlagBits(i) & (iFlags|ADMFLAG_ROOT)))) ||
-                 (bAdmins && (GetUserFlagBits(i) & (ADMFLAG_GENERIC|ADMFLAG_ROOT))))) {
+            if (IsValidClient(i, bAdmins, bFlags, iFlags)) {
                 CreateDialog(i, hKv, DialogType_Msg);
             }
         }
@@ -232,6 +217,13 @@ public Action Timer_CenterAd(Handle timer, DataPack pack)
 /**
  * Stocks
  */
+bool IsValidClient(int iClient, bool bAdmins, bool bFlags, int iFlags)
+{
+    return IsClientInGame(iClient) && !IsFakeClient(iClient)
+        && ((!bAdmins && !(bFlags && CheckCommandAccess(iClient, "Advertisements", iFlags)))
+            || (bAdmins && CheckCommandAccess(iClient, "Advertisements", ADMFLAG_GENERIC)));
+}
+
 void ParseAds()
 {
     delete g_hAdvertisements;
@@ -285,7 +277,7 @@ void ProcessVariables(char sText[1024])
     }
 
     ConVar hConVar;
-    char sConVar[64], sSearch[64], sReplace[64];
+    char sConVar[64], sSearch[64], sReplace[256];
     int iEnd = -1, iStart = StrContains(sText, "{"), iStart2;
     while (iStart != -1) {
         iEnd = StrContains(sText[iStart + 1], "}");
@@ -308,4 +300,10 @@ void ProcessVariables(char sText[1024])
 
         iStart += iStart2 + 1;
     }
+}
+
+void RestartTimer()
+{
+    delete g_hTimer;
+    g_hTimer = CreateTimer(float(g_hInterval.IntValue), Timer_DisplayAd, _, TIMER_REPEAT);
 }
