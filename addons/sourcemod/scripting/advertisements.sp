@@ -1,7 +1,7 @@
 #include <sourcemod>
-#include <colorvariables>
 #undef REQUIRE_PLUGIN
 #include <updater>
+#include "advertisements/chatcolors.sp"
 #include "advertisements/topcolors.sp"
 
 #pragma newdecls required
@@ -45,6 +45,7 @@ public void OnPluginStart()
 
     RegServerCmd("sm_advertisements_reload", Command_ReloadAds, "Reload the advertisements");
 
+    AddChatColors();
     AddTopColors();
 
     if (LibraryExists("updater")) {
@@ -119,7 +120,6 @@ public Action Timer_DisplayAd(Handle timer)
 
     if (sCenter[0]) {
         ProcessVariables(sCenter);
-        CRemoveColors(sCenter, sizeof(sCenter));
 
         for (int i = 1; i <= MaxClients; i++) {
             if (IsClientInGame(i) && !IsFakeClient(i) &&
@@ -136,7 +136,6 @@ public Action Timer_DisplayAd(Handle timer)
     }
     if (sHint[0]) {
         ProcessVariables(sHint);
-        CRemoveColors(sHint, sizeof(sHint));
 
         for (int i = 1; i <= MaxClients; i++) {
             if (IsClientInGame(i) && !IsFakeClient(i) &&
@@ -148,7 +147,6 @@ public Action Timer_DisplayAd(Handle timer)
     }
     if (sMenu[0]) {
         ProcessVariables(sMenu);
-        CRemoveColors(sMenu, sizeof(sMenu));
 
         Panel hPl = new Panel();
         hPl.DrawText(sMenu);
@@ -167,19 +165,18 @@ public Action Timer_DisplayAd(Handle timer)
     if (sChat[0]) {
         bool bTeamColor = StrContains(sChat, "{teamcolor}", false) != -1;
 
-        Format(sChat, sizeof(sChat), "%c%s", 1, sChat);
-        ProcessVariables(sChat);
-        CProcessVariables(sChat, sizeof(sChat));
-        CAddWhiteSpace(sChat, sizeof(sChat));
+        char sBuffer[1024];
+        ProcessChatColors(sChat, sBuffer, sizeof(sBuffer));
+        ProcessVariables(sBuffer);
 
         for (int i = 1; i <= MaxClients; i++) {
             if (IsClientInGame(i) && !IsFakeClient(i) &&
                 ((!bAdmins && !(bFlags && (GetUserFlagBits(i) & (iFlags|ADMFLAG_ROOT)))) ||
                  (bAdmins && (GetUserFlagBits(i) & (ADMFLAG_GENERIC|ADMFLAG_ROOT))))) {
                 if (bTeamColor) {
-                    CSayText2(i, sChat, i);
+                    SayText2(i, sBuffer);
                 } else {
-                    PrintToChat(i, sChat);
+                    PrintToChat(i, sBuffer);
                 }
             }
         }
