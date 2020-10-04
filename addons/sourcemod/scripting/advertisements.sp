@@ -41,6 +41,7 @@ ArrayList g_hAdvertisements;
 ConVar g_hEnabled;
 ConVar g_hFile;
 ConVar g_hInterval;
+ConVar g_hRandom;
 Handle g_hTimer;
 
 
@@ -53,6 +54,7 @@ public void OnPluginStart()
     g_hEnabled  = CreateConVar("sm_advertisements_enabled",  "1",                  "Enable/disable displaying advertisements.");
     g_hFile     = CreateConVar("sm_advertisements_file",     "advertisements.txt", "File to read the advertisements from.");
     g_hInterval = CreateConVar("sm_advertisements_interval", "30",                 "Amount of seconds between advertisements.");
+    g_hRandom   = CreateConVar("sm_advertisements_random",   "0",                  "Enable/disable random advertisements.");
 
     g_hFile.AddChangeHook(ConVarChange_File);
     g_hInterval.AddChangeHook(ConVarChange_Interval);
@@ -265,6 +267,10 @@ void ParseAds()
 
         g_hAdvertisements.PushArray(ad);
     } while (hConfig.GotoNextKey());
+
+    if (g_hRandom.BoolValue) {
+        g_hAdvertisements.Sort(Sort_Random, Sort_Integer);
+    }
 
     delete hConfig;
 }
