@@ -20,10 +20,24 @@ public Plugin myinfo =
 };
 
 
+enum struct Advertisement
+{
+    char center[1024];
+    char chat[1024];
+    char hint[1024];
+    char menu[1024];
+    char top[1024];
+    bool adminsOnly;
+    bool hasFlags;
+    int flags;
+}
+
+
 /**
  * Globals
  */
-KeyValues g_hAdvertisements;
+int g_iCurrentAd;
+ArrayList g_hAdvertisements;
 ConVar g_hEnabled;
 ConVar g_hFile;
 ConVar g_hInterval;
@@ -42,6 +56,8 @@ public void OnPluginStart()
 
     g_hFile.AddChangeHook(ConVarChange_File);
     g_hInterval.AddChangeHook(ConVarChange_Interval);
+
+    g_hAdvertisements = new ArrayList(sizeof(Advertisement));
 
     RegServerCmd("sm_advertisements_reload", Command_ReloadAds, "Reload the advertisements");
 
@@ -102,23 +118,15 @@ public Action Timer_DisplayAd(Handle timer)
         return;
     }
 
-    char sCenter[1024], sChat[1024], sHint[1024], sMenu[1024], sTop[1024], sFlags[22];
-    g_hAdvertisements.GetString("center", sCenter, sizeof(sCenter));
-    g_hAdvertisements.GetString("chat",   sChat,   sizeof(sChat));
-    g_hAdvertisements.GetString("hint",   sHint,   sizeof(sHint));
-    g_hAdvertisements.GetString("menu",   sMenu,   sizeof(sMenu));
-    g_hAdvertisements.GetString("top",    sTop,    sizeof(sTop));
-    g_hAdvertisements.GetString("flags",  sFlags,  sizeof(sFlags), "none");
-    int iFlags   = ReadFlagString(sFlags);
-    bool bAdmins = StrEqual(sFlags, ""),
-         bFlags  = !StrEqual(sFlags, "none");
+    Advertisement ad;
+    g_hAdvertisements.GetArray(g_iCurrentAd, ad);
     char message[1024];
 
-    if (sCenter[0]) {
-        ProcessVariables(sCenter, message, sizeof(message));
+    if (ad.center[0]) {
+        ProcessVariables(ad.center, message, sizeof(message));
 
         for (int i = 1; i <= MaxClients; i++) {
-            if (IsValidClient(i, bAdmins, bFlags, iFlags)) {
+            if (IsValidClient(i, ad)) {
                 PrintCenterText(i, "%s", message);
 
                 DataPack hCenterAd;
@@ -128,39 +136,39 @@ public Action Timer_DisplayAd(Handle timer)
             }
         }
     }
-    if (sHint[0]) {
-        ProcessVariables(sHint, message, sizeof(message));
+    if (ad.hint[0]) {
+        ProcessVariables(ad.hint, message, sizeof(message));
 
         for (int i = 1; i <= MaxClients; i++) {
-            if (IsValidClient(i, bAdmins, bFlags, iFlags)) {
+            if (IsValidClient(i, ad)) {
                 PrintHintText(i, "%s", message);
             }
         }
     }
-    if (sMenu[0]) {
-        ProcessVariables(sMenu, message, sizeof(message));
+    if (ad.menu[0]) {
+        ProcessVariables(ad.menu, message, sizeof(message));
 
         Panel hPl = new Panel();
         hPl.DrawText(message);
         hPl.CurrentKey = 10;
 
         for (int i = 1; i <= MaxClients; i++) {
-            if (IsValidClient(i, bAdmins, bFlags, iFlags)) {
+            if (IsValidClient(i, ad)) {
                 hPl.Send(i, Handler_DoNothing, 10);
             }
         }
 
         delete hPl;
     }
-    if (sChat[0]) {
-        bool bTeamColor = StrContains(sChat, "{teamcolor}", false) != -1;
+    if (ad.chat[0]) {
+        bool bTeamColor = StrContains(ad.chat, "{teamcolor}", false) != -1;
 
         char buffer[1024];
-        ProcessChatColors(sChat, buffer, sizeof(buffer));
+        ProcessChatColors(ad.chat, buffer, sizeof(buffer));
         ProcessVariables(buffer, message, sizeof(message));
 
         for (int i = 1; i <= MaxClients; i++) {
-            if (IsValidClient(i, bAdmins, bFlags, iFlags)) {
+            if (IsValidClient(i, ad)) {
                 if (bTeamColor) {
                     SayText2(i, message);
                 } else {
@@ -169,12 +177,12 @@ public Action Timer_DisplayAd(Handle timer)
             }
         }
     }
-    if (sTop[0]) {
+    if (ad.top[0]) {
         int iStart    = 0,
             aColor[4] = {255, 255, 255, 255};
 
-        ParseTopColor(sTop, iStart, aColor);
-        ProcessVariables(sTop[iStart], message, sizeof(message));
+        ParseTopColor(ad.top, iStart, aColor);
+        ProcessVariables(ad.top[iStart], message, sizeof(message));
 
         KeyValues hKv = new KeyValues("Stuff", "title", message);
         hKv.SetColor4("color", aColor);
@@ -182,7 +190,7 @@ public Action Timer_DisplayAd(Handle timer)
         hKv.SetNum("time",     10);
 
         for (int i = 1; i <= MaxClients; i++) {
-            if (IsValidClient(i, bAdmins, bFlags, iFlags)) {
+            if (IsValidClient(i, ad)) {
                 CreateDialog(i, hKv, DialogType_Msg);
             }
         }
@@ -190,9 +198,8 @@ public Action Timer_DisplayAd(Handle timer)
         delete hKv;
     }
 
-    if (!g_hAdvertisements.GotoNextKey()) {
-        g_hAdvertisements.Rewind();
-        g_hAdvertisements.GotoFirstSubKey();
+    if (++g_iCurrentAd >= g_hAdvertisements.Length) {
+        g_iCurrentAd = 0;
     }
 }
 
@@ -218,17 +225,17 @@ public Action Timer_CenterAd(Handle timer, DataPack pack)
 /**
  * Stocks
  */
-bool IsValidClient(int iClient, bool bAdmins, bool bFlags, int iFlags)
+bool IsValidClient(int client, Advertisement ad)
 {
-    return IsClientInGame(iClient) && !IsFakeClient(iClient)
-        && ((!bAdmins && !(bFlags && CheckCommandAccess(iClient, "Advertisements", iFlags)))
-            || (bAdmins && CheckCommandAccess(iClient, "Advertisements", ADMFLAG_GENERIC)));
+    return IsClientInGame(client) && !IsFakeClient(client)
+        && ((!ad.adminsOnly && !(ad.hasFlags && CheckCommandAccess(client, "Advertisements", ad.flags)))
+            || (ad.adminsOnly && CheckCommandAccess(client, "Advertisements", ADMFLAG_GENERIC)));
 }
 
 void ParseAds()
 {
-    delete g_hAdvertisements;
-    g_hAdvertisements = new KeyValues("Advertisements");
+    g_iCurrentAd = 0;
+    g_hAdvertisements.Clear();
 
     char sFile[64], sPath[PLATFORM_MAX_PATH];
     g_hFile.GetString(sFile, sizeof(sFile));
@@ -238,9 +245,28 @@ void ParseAds()
         SetFailState("File Not Found: %s", sPath);
     }
 
-    g_hAdvertisements.SetEscapeSequences(true);
-    g_hAdvertisements.ImportFromFile(sPath);
-    g_hAdvertisements.GotoFirstSubKey();
+    KeyValues hConfig = new KeyValues("Advertisements");
+    hConfig.SetEscapeSequences(true);
+    hConfig.ImportFromFile(sPath);
+    hConfig.GotoFirstSubKey();
+
+    Advertisement ad;
+    char flags[22];
+    do {
+        hConfig.GetString("center", ad.center, sizeof(Advertisement::center));
+        hConfig.GetString("chat",   ad.chat,   sizeof(Advertisement::chat));
+        hConfig.GetString("hint",   ad.hint,   sizeof(Advertisement::hint));
+        hConfig.GetString("menu",   ad.menu,   sizeof(Advertisement::menu));
+        hConfig.GetString("top",    ad.top,    sizeof(Advertisement::top));
+        hConfig.GetString("flags",  flags,     sizeof(flags), "none");
+        ad.adminsOnly = StrEqual(flags, "");
+        ad.hasFlags   = !StrEqual(flags, "none");
+        ad.flags      = ReadFlagString(flags);
+
+        g_hAdvertisements.PushArray(ad);
+    } while (hConfig.GotoNextKey());
+
+    delete hConfig;
 }
 
 void ProcessVariables(const char[] message, char[] buffer, int maxlength)
