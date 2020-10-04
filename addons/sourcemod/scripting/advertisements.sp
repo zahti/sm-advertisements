@@ -112,35 +112,36 @@ public Action Timer_DisplayAd(Handle timer)
     int iFlags   = ReadFlagString(sFlags);
     bool bAdmins = StrEqual(sFlags, ""),
          bFlags  = !StrEqual(sFlags, "none");
+    char message[1024];
 
     if (sCenter[0]) {
-        ProcessVariables(sCenter);
+        ProcessVariables(sCenter, message, sizeof(message));
 
         for (int i = 1; i <= MaxClients; i++) {
             if (IsValidClient(i, bAdmins, bFlags, iFlags)) {
-                PrintCenterText(i, sCenter);
+                PrintCenterText(i, "%s", message);
 
                 DataPack hCenterAd;
                 CreateDataTimer(1.0, Timer_CenterAd, hCenterAd, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
                 hCenterAd.WriteCell(i);
-                hCenterAd.WriteString(sCenter);
+                hCenterAd.WriteString(message);
             }
         }
     }
     if (sHint[0]) {
-        ProcessVariables(sHint);
+        ProcessVariables(sHint, message, sizeof(message));
 
         for (int i = 1; i <= MaxClients; i++) {
             if (IsValidClient(i, bAdmins, bFlags, iFlags)) {
-                PrintHintText(i, sHint);
+                PrintHintText(i, "%s", message);
             }
         }
     }
     if (sMenu[0]) {
-        ProcessVariables(sMenu);
+        ProcessVariables(sMenu, message, sizeof(message));
 
         Panel hPl = new Panel();
-        hPl.DrawText(sMenu);
+        hPl.DrawText(message);
         hPl.CurrentKey = 10;
 
         for (int i = 1; i <= MaxClients; i++) {
@@ -154,16 +155,16 @@ public Action Timer_DisplayAd(Handle timer)
     if (sChat[0]) {
         bool bTeamColor = StrContains(sChat, "{teamcolor}", false) != -1;
 
-        char sBuffer[1024];
-        ProcessChatColors(sChat, sBuffer, sizeof(sBuffer));
-        ProcessVariables(sBuffer);
+        char buffer[1024];
+        ProcessChatColors(sChat, buffer, sizeof(buffer));
+        ProcessVariables(buffer, message, sizeof(message));
 
         for (int i = 1; i <= MaxClients; i++) {
             if (IsValidClient(i, bAdmins, bFlags, iFlags)) {
                 if (bTeamColor) {
-                    SayText2(i, sBuffer);
+                    SayText2(i, message);
                 } else {
-                    PrintToChat(i, sBuffer);
+                    PrintToChat(i, "%s", message);
                 }
             }
         }
@@ -173,9 +174,9 @@ public Action Timer_DisplayAd(Handle timer)
             aColor[4] = {255, 255, 255, 255};
 
         ParseTopColor(sTop, iStart, aColor);
-        ProcessVariables(sTop[iStart]);
+        ProcessVariables(sTop[iStart], message, sizeof(message));
 
-        KeyValues hKv = new KeyValues("Stuff", "title", sTop[iStart]);
+        KeyValues hKv = new KeyValues("Stuff", "title", message);
         hKv.SetColor4("color", aColor);
         hKv.SetNum("level",    1);
         hKv.SetNum("time",     10);
@@ -197,19 +198,19 @@ public Action Timer_DisplayAd(Handle timer)
 
 public Action Timer_CenterAd(Handle timer, DataPack pack)
 {
-    char sCenter[1024];
+    char message[1024];
     static int iCount = 0;
 
     pack.Reset();
     int iClient = pack.ReadCell();
-    pack.ReadString(sCenter, sizeof(sCenter));
+    pack.ReadString(message, sizeof(message));
 
     if (!IsClientInGame(iClient) || ++iCount >= 5) {
         iCount = 0;
         return Plugin_Stop;
     }
 
-    PrintCenterText(iClient, sCenter);
+    PrintCenterText(iClient, "%s", message);
     return Plugin_Continue;
 }
 
@@ -242,64 +243,57 @@ void ParseAds()
     g_hAdvertisements.GotoFirstSubKey();
 }
 
-void ProcessVariables(char sText[1024])
+void ProcessVariables(const char[] message, char[] buffer, int maxlength)
 {
-    char sBuffer[64];
-    if (StrContains(sText, "{currentmap}", false) != -1) {
-        GetCurrentMap(sBuffer, sizeof(sBuffer));
-        ReplaceString(sText, sizeof(sText), "{currentmap}", sBuffer, false);
-    }
-
-    if (StrContains(sText, "{date}", false) != -1) {
-        FormatTime(sBuffer, sizeof(sBuffer), "%m/%d/%Y");
-        ReplaceString(sText, sizeof(sText), "{date}", sBuffer, false);
-    }
-
-    if (StrContains(sText, "{time}", false) != -1) {
-        FormatTime(sBuffer, sizeof(sBuffer), "%I:%M:%S%p");
-        ReplaceString(sText, sizeof(sText), "{time}", sBuffer, false);
-    }
-
-    if (StrContains(sText, "{time24}", false) != -1) {
-        FormatTime(sBuffer, sizeof(sBuffer), "%H:%M:%S");
-        ReplaceString(sText, sizeof(sText), "{time24}", sBuffer, false);
-    }
-
-    if (StrContains(sText, "{timeleft}", false) != -1) {
-        int iMins, iSecs, iTimeLeft;
-        if (GetMapTimeLeft(iTimeLeft) && iTimeLeft > 0) {
-            iMins = iTimeLeft / 60;
-            iSecs = iTimeLeft % 60;
-        }
-
-        Format(sBuffer, sizeof(sBuffer), "%d:%02d", iMins, iSecs);
-        ReplaceString(sText, sizeof(sText), "{timeleft}", sBuffer, false);
-    }
-
+    char name[64], value[256];
+    int buf_idx, i, name_len;
     ConVar hConVar;
-    char sConVar[64], sSearch[64], sReplace[256];
-    int iEnd = -1, iStart = StrContains(sText, "{"), iStart2;
-    while (iStart != -1) {
-        iEnd = StrContains(sText[iStart + 1], "}");
-        if (iEnd == -1) {
-            break;
+
+    while (message[i]) {
+        if (message[i] != '{' || (name_len = FindCharInString(message[i + 1], '}')) == -1) {
+            buffer[buf_idx++] = message[i++];
+            continue;
         }
 
-        strcopy(sConVar, iEnd + 1, sText[iStart + 1]);
-        Format(sSearch, sizeof(sSearch), "{%s}", sConVar);
+        strcopy(name, name_len + 1, message[i + 1]);
 
-        if ((hConVar = FindConVar(sConVar))) {
-            hConVar.GetString(sReplace, sizeof(sReplace));
-            ReplaceString(sText, sizeof(sText), sSearch, sReplace, false);
+        if (StrEqual(name, "currentmap", false)) {
+            GetCurrentMap(value, sizeof(value));
+            buf_idx += strcopy(buffer[buf_idx], maxlength - buf_idx, value);
+        }
+        else if (StrEqual(name, "date", false)) {
+            FormatTime(value, sizeof(value), "%m/%d/%Y");
+            buf_idx += strcopy(buffer[buf_idx], maxlength - buf_idx, value);
+        }
+        else if (StrEqual(name, "time", false)) {
+            FormatTime(value, sizeof(value), "%I:%M:%S%p");
+            buf_idx += strcopy(buffer[buf_idx], maxlength - buf_idx, value);
+        }
+        else if (StrEqual(name, "time24", false)) {
+            FormatTime(value, sizeof(value), "%H:%M:%S");
+            buf_idx += strcopy(buffer[buf_idx], maxlength - buf_idx, value);
+        }
+        else if (StrEqual(name, "timeleft", false)) {
+            int mins, secs, timeleft;
+            if (GetMapTimeLeft(timeleft) && timeleft > 0) {
+                mins = timeleft / 60;
+                secs = timeleft % 60;
+            }
+
+            buf_idx += FormatEx(buffer[buf_idx], maxlength - buf_idx, "%d:%02d", mins, secs);
+        }
+        else if ((hConVar = FindConVar(name))) {
+            hConVar.GetString(value, sizeof(value));
+            buf_idx += strcopy(buffer[buf_idx], maxlength - buf_idx, value);
+        }
+        else {
+            buf_idx += FormatEx(buffer[buf_idx], maxlength - buf_idx, "{%s}", name);
         }
 
-        iStart2 = StrContains(sText[iStart + 1], "{");
-        if (iStart2 == -1) {
-            break;
-        }
-
-        iStart += iStart2 + 1;
+        i += name_len + 2;
     }
+
+    buffer[buf_idx] = '\0';
 }
 
 void RestartTimer()
