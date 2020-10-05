@@ -23,7 +23,7 @@ public Plugin myinfo =
 enum struct Advertisement
 {
     char center[1024];
-    char chat[1024];
+    char chat[2048];
     char hint[1024];
     char menu[1024];
     char top[1024];
@@ -163,18 +163,24 @@ public Action Timer_DisplayAd(Handle timer)
         delete hPl;
     }
     if (ad.chat[0]) {
-        bool bTeamColor = StrContains(ad.chat, "{teamcolor}", false) != -1;
+        bool teamColor[10];
+        char messages[10][1024];
+        int messageCount = ExplodeString(ad.chat, "\n", messages, sizeof(messages), sizeof(messages[]));
 
-        char buffer[1024];
-        ProcessChatColors(ad.chat, buffer, sizeof(buffer));
-        ProcessVariables(buffer, message, sizeof(message));
+        for (int idx; idx < messageCount; idx++) {
+            teamColor[idx] = StrContains(messages[idx], "{teamcolor}", false) != -1;
+            ProcessChatColors(messages[idx], message, sizeof(message));
+            ProcessVariables(message, messages[idx], sizeof(messages[]));
+        }
 
         for (int i = 1; i <= MaxClients; i++) {
             if (IsValidClient(i, ad)) {
-                if (bTeamColor) {
-                    SayText2(i, message);
-                } else {
-                    PrintToChat(i, "%s", message);
+                for (int idx; idx < messageCount; idx++) {
+                    if (teamColor[idx]) {
+                        SayText2(i, messages[idx]);
+                    } else {
+                        PrintToChat(i, "%s", messages[idx]);
+                    }
                 }
             }
         }
