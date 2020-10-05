@@ -36,6 +36,7 @@ enum struct Advertisement
 /**
  * Globals
  */
+bool g_bSayText2;
 int g_iCurrentAd;
 ArrayList g_hAdvertisements;
 ConVar g_hEnabled;
@@ -59,6 +60,7 @@ public void OnPluginStart()
     g_hFile.AddChangeHook(ConVarChange_File);
     g_hInterval.AddChangeHook(ConVarChange_Interval);
 
+    g_bSayText2 = GetUserMessageId("SayText2") != INVALID_MESSAGE_ID;
     g_hAdvertisements = new ArrayList(sizeof(Advertisement));
 
     RegServerCmd("sm_advertisements_reload", Command_ReloadAds, "Reload the advertisements");
@@ -169,6 +171,10 @@ public Action Timer_DisplayAd(Handle timer)
 
         for (int idx; idx < messageCount; idx++) {
             teamColor[idx] = StrContains(messages[idx], "{teamcolor}", false) != -1;
+            if (teamColor[idx] && !g_bSayText2) {
+                SetFailState("This game does not support {teamcolor}");
+            }
+
             ProcessChatColors(messages[idx], message, sizeof(message));
             ProcessVariables(message, messages[idx], sizeof(messages[]));
         }
