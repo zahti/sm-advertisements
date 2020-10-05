@@ -190,7 +190,7 @@ void AddChatColors()
             AddChatColor("yellow", "\x04");
             AddChatColor("green", "\x05");
         }
-        default: {
+        case Engine_CSGO: {
             AddChatColor("red", "\x07");
             AddChatColor("lightred", "\x0F");
             AddChatColor("darkred", "\x02");
@@ -206,6 +206,11 @@ void AddChatColors()
             AddChatColor("lime", "\x06");
             AddChatColor("grey", "\x08");
             AddChatColor("grey2", "\x0D");
+        }
+        default: {
+            AddChatColor("lightgreen", "\x03");
+            AddChatColor("green", "\x04");
+            AddChatColor("olive", "\x05");
         }
     }
 
