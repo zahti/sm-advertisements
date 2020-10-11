@@ -263,7 +263,7 @@ void ProcessChatColors(const char[] message, char[] buffer, int maxlength)
         if (name[0] == '#') {
             buf_idx += FormatEx(buffer[buf_idx], maxlength - buf_idx, "%c%s", (name_len == 9) ? 8 : 7, name[1]);
         } else if (g_hChatColors.GetString(name, color, sizeof(color))) {
-            buf_idx += StrCat(buffer[buf_idx], maxlength - buf_idx, color);
+            buf_idx += strcopy(buffer[buf_idx], maxlength - buf_idx, color);
         } else {
             buf_idx += FormatEx(buffer[buf_idx], maxlength - buf_idx, "{%s}", name);
         }

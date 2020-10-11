@@ -54,7 +54,7 @@ public void OnPluginStart()
     CreateConVar("sm_advertisements_version", PL_VERSION, "Display advertisements", FCVAR_NOTIFY);
     g_hEnabled  = CreateConVar("sm_advertisements_enabled",  "1",                  "Enable/disable displaying advertisements.");
     g_hFile     = CreateConVar("sm_advertisements_file",     "advertisements.txt", "File to read the advertisements from.");
-    g_hInterval = CreateConVar("sm_advertisements_interval", "30",                 "Amount of seconds between advertisements.");
+    g_hInterval = CreateConVar("sm_advertisements_interval", "30",                 "Number of seconds between advertisements.");
     g_hRandom   = CreateConVar("sm_advertisements_random",   "0",                  "Enable/disable random advertisements.");
 
     g_hFile.AddChangeHook(ConVarChange_File);
@@ -140,30 +140,6 @@ public Action Timer_DisplayAd(Handle timer)
             }
         }
     }
-    if (ad.hint[0]) {
-        ProcessVariables(ad.hint, message, sizeof(message));
-
-        for (int i = 1; i <= MaxClients; i++) {
-            if (IsValidClient(i, ad)) {
-                PrintHintText(i, "%s", message);
-            }
-        }
-    }
-    if (ad.menu[0]) {
-        ProcessVariables(ad.menu, message, sizeof(message));
-
-        Panel hPl = new Panel();
-        hPl.DrawText(message);
-        hPl.CurrentKey = 10;
-
-        for (int i = 1; i <= MaxClients; i++) {
-            if (IsValidClient(i, ad)) {
-                hPl.Send(i, Handler_DoNothing, 10);
-            }
-        }
-
-        delete hPl;
-    }
     if (ad.chat[0]) {
         bool teamColor[10];
         char messages[10][1024];
@@ -190,6 +166,30 @@ public Action Timer_DisplayAd(Handle timer)
                 }
             }
         }
+    }
+    if (ad.hint[0]) {
+        ProcessVariables(ad.hint, message, sizeof(message));
+
+        for (int i = 1; i <= MaxClients; i++) {
+            if (IsValidClient(i, ad)) {
+                PrintHintText(i, "%s", message);
+            }
+        }
+    }
+    if (ad.menu[0]) {
+        ProcessVariables(ad.menu, message, sizeof(message));
+
+        Panel hPl = new Panel();
+        hPl.DrawText(message);
+        hPl.CurrentKey = 10;
+
+        for (int i = 1; i <= MaxClients; i++) {
+            if (IsValidClient(i, ad)) {
+                hPl.Send(i, Handler_DoNothing, 10);
+            }
+        }
+
+        delete hPl;
     }
     if (ad.top[0]) {
         int iStart    = 0,
@@ -237,7 +237,7 @@ public Action Timer_CenterAd(Handle timer, DataPack pack)
 
 
 /**
- * Stocks
+ * Functions
  */
 bool IsValidClient(int client, Advertisement ad)
 {
