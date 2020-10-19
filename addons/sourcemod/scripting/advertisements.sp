@@ -1,5 +1,6 @@
 #include <sourcemod>
 #undef REQUIRE_PLUGIN
+#include <mapchooser>
 #include <updater>
 #include "advertisements/chatcolors.sp"
 #include "advertisements/topcolors.sp"
@@ -36,6 +37,7 @@ enum struct Advertisement
 /**
  * Globals
  */
+bool g_bMapChooser;
 bool g_bSayText2;
 int g_iCurrentAd;
 ArrayList g_hAdvertisements;
@@ -60,6 +62,7 @@ public void OnPluginStart()
     g_hFile.AddChangeHook(ConVarChange_File);
     g_hInterval.AddChangeHook(ConVarChange_Interval);
 
+    g_bMapChooser = LibraryExists("mapchooser");
     g_bSayText2 = GetUserMessageId("SayText2") != INVALID_MESSAGE_ID;
     g_hAdvertisements = new ArrayList(sizeof(Advertisement));
 
@@ -81,8 +84,18 @@ public void OnConfigsExecuted()
 
 public void OnLibraryAdded(const char[] name)
 {
+    if (StrEqual(name, "mapchooser")) {
+        g_bMapChooser = true;
+    }
     if (StrEqual(name, "updater")) {
         Updater_AddPlugin(UPDATE_URL);
+    }
+}
+
+public void OnLibraryRemoved(const char[] name)
+{
+    if (StrEqual(name, "mapchooser")) {
+        g_bMapChooser = false;
     }
 }
 
@@ -303,7 +316,17 @@ void ProcessVariables(const char[] message, char[] buffer, int maxlength)
 
         if (StrEqual(name, "currentmap", false)) {
             GetCurrentMap(value, sizeof(value));
+            GetMapDisplayName(value, value, sizeof(value));
             buf_idx += strcopy(buffer[buf_idx], maxlength - buf_idx, value);
+        }
+        else if (StrEqual(name, "nextmap", false)) {
+            if (g_bMapChooser && EndOfMapVoteEnabled() && !HasEndOfMapVoteFinished()) {
+                buf_idx += strcopy(buffer[buf_idx], maxlength - buf_idx, "Pending Vote");
+            } else {
+                GetNextMap(value, sizeof(value));
+                GetMapDisplayName(value, value, sizeof(value));
+                buf_idx += strcopy(buffer[buf_idx], maxlength - buf_idx, value);
+            }
         }
         else if (StrEqual(name, "date", false)) {
             FormatTime(value, sizeof(value), "%m/%d/%Y");

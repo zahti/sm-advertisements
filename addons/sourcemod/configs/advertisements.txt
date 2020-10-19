@@ -28,7 +28,7 @@
     }
     "3"
     {
-        "menu"			"Next map is {sm_nextmap} in {timeleft} minutes."
+        "menu"			"Next map is {nextmap} in {timeleft} minutes."
         "flags"			"cft"
     }
     "4"
