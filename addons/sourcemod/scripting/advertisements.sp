@@ -8,7 +8,7 @@
 #pragma newdecls required
 #pragma semicolon 1
 
-#define PL_VERSION	"2.0.4"
+#define PL_VERSION	"2.1.0"
 #define UPDATE_URL	"http://ErikMinekus.github.io/sm-advertisements/update.txt"
 
 public Plugin myinfo =

@@ -1,4 +1,4 @@
-// Advertisements 2.0
+// Advertisements 2.1
 // by Tsunami
 //
 // Types
