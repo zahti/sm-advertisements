@@ -255,8 +255,8 @@ public Action Timer_CenterAd(Handle timer, DataPack pack)
 bool IsValidClient(int client, Advertisement ad)
 {
     return IsClientInGame(client) && !IsFakeClient(client)
-        && ((!ad.adminsOnly && !(ad.hasFlags && CheckCommandAccess(client, "Advertisements", ad.flags)))
-            || (ad.adminsOnly && CheckCommandAccess(client, "Advertisements", ADMFLAG_GENERIC)));
+        && ((!ad.adminsOnly && !(ad.hasFlags && (GetUserFlagBits(client) & (ad.flags|ADMFLAG_ROOT))))
+            || (ad.adminsOnly && (GetUserFlagBits(client) & (ADMFLAG_GENERIC|ADMFLAG_ROOT))));
 }
 
 void ParseAds()
