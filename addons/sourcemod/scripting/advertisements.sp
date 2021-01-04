@@ -306,7 +306,7 @@ void ProcessVariables(const char[] message, char[] buffer, int maxlength)
     int buf_idx, i, name_len;
     ConVar hConVar;
 
-    while (message[i]) {
+    while (message[i] && buf_idx < maxlength - 1) {
         if (message[i] != '{' || (name_len = FindCharInString(message[i + 1], '}')) == -1) {
             buffer[buf_idx++] = message[i++];
             continue;
