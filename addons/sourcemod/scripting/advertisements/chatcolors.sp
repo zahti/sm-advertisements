@@ -10,7 +10,7 @@ void AddChatColors()
     AddChatColor("teamcolor", "\x03");
 
     switch (GetEngineVersion()) {
-        case Engine_CSS, Engine_DODS, Engine_HL2DM, Engine_TF2: {
+        case Engine_CSS, Engine_DODS, Engine_HL2DM, Engine_Insurgency, Engine_SDK2013, Engine_TF2: {
             AddChatColor("aliceblue", "\x07F0F8FF");
             AddChatColor("allies", "\x074D7942");
             AddChatColor("ancient", "\x07EB4B4B");
