@@ -2,13 +2,14 @@
 #undef REQUIRE_PLUGIN
 #include <mapchooser>
 #include <updater>
-#include "advertisements/chatcolors.sp"
-#include "advertisements/topcolors.sp"
 
 #pragma newdecls required
 #pragma semicolon 1
 
-#define PL_VERSION	"2.1.0"
+#include "advertisements/chatcolors.sp"
+#include "advertisements/topcolors.sp"
+
+#define PL_VERSION	"2.1.1"
 #define UPDATE_URL	"http://ErikMinekus.github.io/sm-advertisements/update.txt"
 
 public Plugin myinfo =
@@ -59,8 +60,8 @@ public void OnPluginStart()
     g_hInterval = CreateConVar("sm_advertisements_interval", "30",                 "Number of seconds between advertisements.");
     g_hRandom   = CreateConVar("sm_advertisements_random",   "0",                  "Enable/disable random advertisements.");
 
-    g_hFile.AddChangeHook(ConVarChange_File);
-    g_hInterval.AddChangeHook(ConVarChange_Interval);
+    g_hFile.AddChangeHook(ConVarChanged_File);
+    g_hInterval.AddChangeHook(ConVarChanged_Interval);
 
     g_bMapChooser = LibraryExists("mapchooser");
     g_bSayText2 = GetUserMessageId("SayText2") != INVALID_MESSAGE_ID;
@@ -99,12 +100,16 @@ public void OnLibraryRemoved(const char[] name)
     }
 }
 
-public void ConVarChange_File(ConVar convar, const char[] oldValue, const char[] newValue)
+
+/**
+ * ConVar Changes
+ */
+public void ConVarChanged_File(ConVar convar, const char[] oldValue, const char[] newValue)
 {
     ParseAds();
 }
 
-public void ConVarChange_Interval(ConVar convar, const char[] oldValue, const char[] newValue)
+public void ConVarChanged_Interval(ConVar convar, const char[] oldValue, const char[] newValue)
 {
     RestartTimer();
 }
@@ -123,7 +128,7 @@ public Action Command_ReloadAds(int args)
 /**
  * Menu Handlers
  */
-public int Handler_DoNothing(Menu menu, MenuAction action, int param1, int param2) {}
+public int MenuHandler_DoNothing(Menu menu, MenuAction action, int param1, int param2) {}
 
 
 /**
@@ -198,7 +203,7 @@ public Action Timer_DisplayAd(Handle timer)
 
         for (int i = 1; i <= MaxClients; i++) {
             if (IsValidClient(i, ad)) {
-                hPl.Send(i, Handler_DoNothing, 10);
+                hPl.Send(i, MenuHandler_DoNothing, 10);
             }
         }
 
