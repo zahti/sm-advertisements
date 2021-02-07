@@ -1,0 +1,70 @@
+name: CI
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sourcemod-version: ['1.10', '1.11']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up SourcePawn compiler
+        run: >
+          wget "https://www.sourcemod.net/latest.php?os=linux&version=${{ matrix.sourcemod-version }}" -O -
+          | tar -xz --strip-components 3 addons/sourcemod/scripting/include addons/sourcemod/scripting/spcomp
+
+      - name: Compile plugin
+        working-directory: addons/sourcemod/scripting
+        run: $GITHUB_WORKSPACE/spcomp advertisements.sp -i include -o ../plugins/advertisements.smx
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: sourcemod-${{ matrix.sourcemod-version }}
+          path: addons/sourcemod
+
+
+  release:
+    name: Release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        sourcemod-version: ['1.10']
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: sourcemod-${{ matrix.sourcemod-version }}
+          path: addons/sourcemod
+
+      - name: Package
+        run: 7z a advertisements.zip addons/
+
+      - name: Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: advertisements.zip
+          tag: ${{ github.ref }}
+
+      - name: Deploy to GitHub Pages
+        run: |
+          version=`echo $GITHUB_REF | sed "s/refs\/tags\///"`
+          sed "s/\$VERSION/$version/" update.txt.template > update.txt
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git checkout --orphan gh-pages
+          git rm -rf .
+          git add addons/ update.txt
+          git commit -m "Deploy to GitHub Pages"
+          git push --force --quiet origin gh-pages > /dev/null 2>&1
