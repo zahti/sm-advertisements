@@ -19,14 +19,21 @@
 {
 	"1"
     {
-        "chat"		"{grey2}[SERVER] {red}Come check out the STORM website to look at your stats: {lightgreen}https://storm-esports.com/ {red}or accessible via the Server Website button at the bottom of the TAB scoreboard."
+        "chat"		"{grey2}[SERVER] {red}Come check out the STORM website: {lightgreen}https://storm-esports.com/ {red}or accessible via the Server Website button at the bottom of the TAB scoreboard."
+	//	"chat"		"{grey2}[SERVER] {red}Come check out the STORM website to look at your stats: {lightgreen}https://storm-esports.com/ {red}or accessible via the Server Website button at the bottom of the TAB scoreboard."
     }
     "2"
     {
-        "chat"		"{grey2}[SERVER] {red}Useful commands: {lightgreen}!guns !rankme !rank !top !statsme !session !hitboxme"
+        "chat"		"{grey2}[SERVER] {red}To change the weapons you spawn with: {lightgreen}!guns"
+	//	"chat"		"{grey2}[SERVER] {red}Useful commands: {lightgreen}!guns !rankme !rank !top !statsme !session !hitboxme"
     }
-    //"3"
-    //{
-    //    "chat"		"{grey2}[SERVER] {red}Retakes, 9 players max (5v4), reserved slots for VIP/donors."
-    //}
+	"3"
+    {
+        "chat"		"{grey2}[SERVER] {red}Join the STORM community: {lightgreen}https://discord.gg/WfbgMe7"
+    }
+    "4"
+    {
+        "chat"		"{grey2}[SERVER] {red}FFA Deathmatch, 18 players max, reserved slots for VIP/donors."
+	//	"chat"		"{grey2}[SERVER] {red}Retakes, 9 players max (5v4), reserved slots for VIP/donors."
+    }
 }
